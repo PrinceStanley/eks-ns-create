@@ -41,6 +41,7 @@ spec:
         AWS_REGION = "${params.AWS_REGION}"
         NAMESPACE_NAME = "${params.NAMESPACE_NAME}"
         CLUSTER_NAME = "${params.CLUSTER_NAME}"
+        KUBECONFIG_FILE = "${WORKSPACE}/kubeconfig-${params.NAMESPACE_NAME}.yaml"
     }
 
     stages {
@@ -76,12 +77,12 @@ spec:
                 container('aws') {
                     script {
                          sh """
-                            aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_REGION}
-                            sed -i 's/NAMESPACE_NAME/${NAMESPACE_NAME}/g' 1-ns-sa.yaml
+                            aws eks update-kubeconfig --name "${CLUSTER_NAME}" --region "${AWS_REGION}"
+                            sed -i 's/NAMESPACE_NAME/"${NAMESPACE_NAME}"/g' 1-ns-sa.yaml
                             kubectl apply -f 1-ns-sa.yaml
-                            sed -i 's/NAMESPACE_NAME/${NAMESPACE_NAME}/g' 2-ns-role.yaml
+                            sed -i 's/NAMESPACE_NAME/"${NAMESPACE_NAME}"/g' 2-ns-role.yaml
                             kubectl apply -f 2-ns-role.yaml
-                            sed -i 's/NAMESPACE_NAME/${NAMESPACE_NAME}/g' 3-ns-rolebinding.yaml
+                            sed -i 's/NAMESPACE_NAME/"${NAMESPACE_NAME}"/g' 3-ns-rolebinding.yaml
                             kubectl apply -f 3-ns-rolebinding.yaml
                             echo "ServiceAccount, Role, and RoleBinding created successfully."
                         """
@@ -95,13 +96,13 @@ spec:
                 container('aws') {
                     script {
                         sh """
-                            aws eks update-kubeconfig --name ${CLUSTER_NAME} --region ${AWS_REGION}
+                            aws eks update-kubeconfig --name "${CLUSTER_NAME}" --region "${AWS_REGION}"
                             echo "Generating token for ServiceAccount..."
-                            TOKEN="$(kubectl create token ${NAMESPACE_NAME}-user -n ${NAMESPACE_NAME} --duration=99999h)"
+                            TOKEN="$(kubectl create token "${NAMESPACE_NAME}-user" -n "${NAMESPACE_NAME}" --duration=99999h)"
 
                             echo "Fetching EKS cluster details..."
-                            ENDPOINT="$(aws eks describe-cluster --name ${CLUSTER_NAME} --region ${AWS_REGION} --query "cluster.endpoint" --output text)"
-                            CERT="$(aws eks describe-cluster --name ${CLUSTER_NAME} --region ${AWS_REGION} --query "cluster.certificateAuthority.data" --output text)"
+                            ENDPOINT="$(aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${AWS_REGION}" --query "cluster.endpoint" --output text)"
+                            CERT="$(aws eks describe-cluster --name "${CLUSTER_NAME}" --region "${AWS_REGION}" --query "cluster.certificateAuthority.data" --output text)"
 
                             echo "Building kubeconfig file..."
                     cat > ${KUBECONFIG_FILE} <<EOF
@@ -109,20 +110,20 @@ apiVersion: v1
 kind: Config
 clusters:
 - cluster:
-    certificate-authority-data: ${CERT}
-    server: ${ENDPOINT}
+    certificate-authority-data: "${CERT}"
+    server: "${ENDPOINT}"
   name: eks-cluster
 contexts:
 - context:
     cluster: eks-cluster
-    namespace: ${NAMESPACE_NAME}
-    user: ${NAMESPACE_NAME}-user
-  name: ${NAMESPACE_NAME}-context
-current-context: ${NAMESPACE_NAME}-context
+    namespace: "${NAMESPACE_NAME}"
+    user: "${NAMESPACE_NAME}-user"
+  name: "${NAMESPACE_NAME}-context"
+current-context: "${NAMESPACE_NAME}-context"
 users:
-- name: ${NAMESPACE_NAME}-user
+- name: "${NAMESPACE_NAME}-user"
   user:
-    token: ${TOKEN}
+    token: "${TOKEN}"
 EOF
                     echo "✅ Kubeconfig generated: ${KUBECONFIG_FILE}"
                     """
