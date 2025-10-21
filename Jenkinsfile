@@ -78,11 +78,11 @@ spec:
                     script {
                          sh """
                             KUBECONFIG=/home/jenkins/agent/workspace/.kube/config aws eks update-kubeconfig --name \${CLUSTER_NAME} --region \${AWS_REGION}
-                            sed -i 's/NAMESPACE_NAME/\${NAMESPACE_NAME}/g' 1-ns-sa.yaml
+                            sed -i 's/NAMESPACE_NAME/${NAMESPACE_NAME}/g' 1-ns-sa.yaml
                             kubectl apply -f 1-ns-sa.yaml
-                            sed -i 's/NAMESPACE_NAME/\${NAMESPACE_NAME}/g' 2-ns-role.yaml
+                            sed -i 's/NAMESPACE_NAME/${NAMESPACE_NAME}/g' 2-ns-role.yaml
                             kubectl apply -f 2-ns-role.yaml
-                            sed -i 's/NAMESPACE_NAME/\${NAMESPACE_NAME}/g' 3-ns-rolebinding.yaml
+                            sed -i 's/NAMESPACE_NAME/${NAMESPACE_NAME}/g' 3-ns-rolebinding.yaml
                             kubectl apply -f 3-ns-rolebinding.yaml
                             echo "ServiceAccount, Role, and RoleBinding created successfully."
                         """
