@@ -131,6 +131,21 @@ EOF
                 }
             }
         }
+
+        stage('Upload Kubeconfig to AWS Secret Manager') {
+            steps {
+                container('aws') {
+                    script {
+                        sh """
+                            echo "Uploading kubeconfig to AWS Secrets Manager..."
+                            aws secretsmanager create-secret --name eks/\${CLUSTER_NAME}/\${NAMESPACE_NAME}/kubeconfig --secret-string file://\${KUBECONFIG_FILE} --region \${AWS_REGION} --description "Kubeconfig for EKS cluster \${CLUSTER_NAME} in namespace \${NAMESPACE_NAME}" || \
+                            aws secretsmanager update-secret --secret-id eks/\${CLUSTER_NAME}/\${NAMESPACE_NAME}/kubeconfig --secret-string file://\${KUBECONFIG_FILE} --region \${AWS_REGION}
+                            echo "✅ Kubeconfig uploaded to AWS Secrets Manager under the name eks/\${CLUSTER_NAME}/\${NAMESPACE_NAME}/kubeconfig"
+                        """
+                    }
+                }
+            }
+        }
     }
 
 
