@@ -41,7 +41,7 @@ spec:
         AWS_REGION = "${params.AWS_REGION}"
         NAMESPACE_NAME = "${params.NAMESPACE_NAME}"
         CLUSTER_NAME = "${params.CLUSTER_NAME}"
-        KUBECONFIG_FILE = "${WORKSPACE}/kubeconfig-${params.NAMESPACE_NAME}.yaml"
+        KUBECONFIG_FILE = "/home/jenkins/agent/workspace/kubeconfig-${params.NAMESPACE_NAME}.yaml"
     }
 
     stages {
@@ -63,7 +63,7 @@ spec:
                     script {
                         echo "Creating Kubernetes namespace: \${NAMESPACE_NAME}"
                         sh """
-                            aws eks update-kubeconfig --name \${CLUSTER_NAME} --region \${AWS_REGION}
+                            KUBECONFIG=/home/jenkins/agent/workspace/.kube/config aws eks update-kubeconfig --name \${CLUSTER_NAME} --region \${AWS_REGION}
                             kubectl create namespace \${NAMESPACE_NAME} --dry-run=client -o yaml | kubectl apply -f -
                             echo "Namespace \${NAMESPACE_NAME} created successfully."
                         """
@@ -77,7 +77,7 @@ spec:
                 container('aws') {
                     script {
                          sh """
-                            aws eks update-kubeconfig --name \${CLUSTER_NAME} --region \${AWS_REGION}
+                            KUBECONFIG=/home/jenkins/agent/workspace/.kube/config aws eks update-kubeconfig --name \${CLUSTER_NAME} --region \${AWS_REGION}
                             sed -i 's/NAMESPACE_NAME/\${NAMESPACE_NAME}/g' 1-ns-sa.yaml
                             kubectl apply -f 1-ns-sa.yaml
                             sed -i 's/NAMESPACE_NAME/\${NAMESPACE_NAME}/g' 2-ns-role.yaml
@@ -96,7 +96,7 @@ spec:
                 container('aws') {
                     script {
                         sh """
-                            aws eks update-kubeconfig --name \${CLUSTER_NAME} --region \${AWS_REGION}
+                            KUBECONFIG=/home/jenkins/agent/workspace/.kube/config aws eks update-kubeconfig --name \${CLUSTER_NAME} --region \${AWS_REGION}
                             echo "Generating token for ServiceAccount..."
                             TOKEN="\$(kubectl create token \${NAMESPACE_NAME}-user -n \${NAMESPACE_NAME} --duration=99999h)"
 
